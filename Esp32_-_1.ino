@@ -5,8 +5,6 @@
 
 #define pinButton 15
 
-bool trigger = false;
-
 // Replace the SSID/Password details as per your wifi router
 const char* ssid = "Microcontroladores";
 const char* password = "raspy123";
@@ -19,17 +17,6 @@ CTBot bot;
 const char* mqtt_server = "200.126.14.167";
 WiFiClient espClient;
 PubSubClient client(espClient);
-
-/*
-   Esta es la función de interrupción.
-   Esta interrupción es disparada cuando se presiona alguno de los botones
-   conectados en paralelo al pin 15
-*/
-
-void IRAM_ATTR ISR()
-{
-  trigger = true;
-}
 
 void setup_wifi() {
   delay(50);
@@ -90,7 +77,6 @@ void setup()
   setup_wifi();
   client.setServer(mqtt_server, 1883); //1883 is the default port for MQTT server
   pinMode(pinButton, INPUT_PULLDOWN);
-  attachInterrupt(digitalPinToInterrupt(pinButton), ISR, RISING);
   bot.setTelegramToken(token_bot);
 }
 
@@ -100,14 +86,12 @@ void loop()
     connect_mqttServer();
   }
   
-  //client.loop();
-  
-  
-  if (trigger) {
-    client.publish("esp32/emisor", "alerta"); //topic name (to which this ESP32 publishes its data). "alerta" is the dummy value.
-    bot.sendMessage(ID_Chat, "EMERGENCIA EN EL LABORATORIO DE SISTEMAS EMBEBIDOS");
-    trigger = false;
-    Serial.println("MENSAJE ENVIADO");
+  if (digitalRead(pinButton)) {
+  delay(30);
+      if (!digitalRead(pinButton)) {
+        client.publish("esp32/emisor", "alerta"); //topic name (to which this ESP32 publishes its data). "alerta" is the dummy value.
+        bot.sendMessage(ID_Chat, "EMERGENCIA EN EL LABORATORIO DE SISTEMAS EMBEBIDOS");
+        Serial.println("MENSAJE ENVIADO");
+      }
   }
-  delay(100);
 }
